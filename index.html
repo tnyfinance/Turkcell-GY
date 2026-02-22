@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tarife Portalı</title>
+    <style>
+        /* GENEL MOBİL UYGULAMA AYARLARI */
+        :root {
+            --primary: #1a73e8;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-dark: #202124;
+            --text-gray: #5f6368;
+            --border: #e0e0e0;
+            --danger: #DE350B;
+            --success: #00875A;
+            --warning: #FF8B00;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #e8eaed; /* Masaüstünde arka plan */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* MOBİL EKRAN SINIRLANDIRMASI */
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow-x: hidden;
+            padding-bottom: 80px; /* Alt menü için boşluk */
+        }
+
+        /* ÜST SABİT BAŞLIK (APP BAR) */
+        .app-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 16px 20px;
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+
+        /* İÇERİK ALANI */
+        .content-area {
+            padding: 15px;
+        }
+
+        /* KART TASARIMI */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        /* ORTAK INPUT & SELECT */
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--text-gray); margin-bottom: 6px; }
+        input[type="number"], select {
+            width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+            font-size: 15px; box-sizing: border-box; background-color: #f8f9fa; outline: none; transition: 0.2s;
+        }
+        input[type="number"]:focus, select:focus { border-color: var(--primary); background-color: #fff; }
+
+        /* SEKMELER (GİZLE/GÖSTER) */
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- TAB 1: TOPLU HESAPLAMA --- */
+        .t1-table { width: 100%; border-collapse: collapse; }
+        .t1-table td { padding: 12px 0; border-bottom: 1px solid #f1f3f4; }
+        .t1-table tr:last-child td { border-bottom: none; }
+        .t1-tarife-ad { font-weight: 700; font-size: 13px; color: var(--text-dark); margin-bottom: 4px; } 
+        .t1-fiyat-etiket { color: var(--primary); font-weight: 700; font-size: 12px; background: #e8f0fe; padding: 4px 8px; border-radius: 6px; display: inline-block; }
+        .t1-input { width: 60px; text-align: center; font-weight: 700; border-color: #d2e3fc; color: var(--primary); }
+        
+        .summary-box { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; font-weight: bold; color: white;}
+        .summary-label { font-size: 12px; opacity: 0.9; }
+        .summary-val { font-size: 16px; }
+        .bg-orange { background: var(--warning); }
+        .bg-gray { background: #EBECF0; color: #172B4D; }
+        .bg-purple { background: #6554C0; }
+        .bg-green { background: var(--success); }
+        .bg-red { background: var(--danger); flex-direction: column; align-items: flex-start; gap: 5px; padding: 15px; margin-top: 15px;}
+        .bg-red .summary-val { font-size: 22px; font-weight: 900; }
+
+        /* --- TAB 2: TEKLİ HESAPLAMA --- */
+        .slider-container { margin: 25px 0; text-align: center; }
+        input[type=range] { width: 100%; margin: 15px 0; }
+        .pct-val { font-size: 24px; font-weight: 800; color: var(--primary); }
+        .result-box { background: #e8f0fe; padding: 20px; border-radius: 16px; text-align: center; border: 1px dashed #aecbfa; margin-top: 10px; }
+        .result-val { font-size: 32px; font-weight: 900; color: var(--primary); margin: 5px 0; }
+
+        /* --- TAB 3: LİSTELER --- */
+        .accordion-btn { 
+            width: 100%; background: var(--card-bg); color: var(--text-dark); padding: 16px; 
+            font-size: 15px; font-weight: 700; text-align: left; border: 1px solid var(--border); 
+            border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .accordion-btn:active { background: #f8f9fa; }
+        .acc-content { display: none; padding: 5px 5px 15px 5px; }
+        .cat-title { color: var(--primary); font-size: 14px; font-weight: 700; text-transform: uppercase; margin: 15px 0 10px 0; padding-left: 5px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #fff; border-radius: 10px; border: 1px solid #f1f3f4; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
+        .pkg-name { font-size: 13px; font-weight: 700; color: #3c4043; display: block;}
+        .pkg-det { font-size: 11px; color: var(--text-gray); margin-top: 3px; display: block; line-height: 1.3;}
+        .pkg-price { font-weight: 800; color: var(--success); background: #e6f4ea; padding: 6px 10px; border-radius: 8px; font-size: 13px; white-space: nowrap;}
+
+        /* --- TAB 4: İNDİRİM ORANI --- */
+        .t4-result { padding: 20px; font-size: 36px; font-weight: 900; text-align: center; color: var(--primary); background: #e8f0fe; border-radius: 16px; margin-top: 20px;}
+
+        /* ALT GEZİNME ÇUBUĞU (BOTTOM NAV) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 480px;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px 20px 15px;
+            box-sizing: border-box;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-gray);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 12px;
+            transition: 0.2s;
+        }
+        .nav-item i { font-size: 22px; margin-bottom: 4px; font-style: normal; }
+        .nav-item.active { color: var(--primary); background-color: #e8f0fe; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div class="app-header" id="appHeaderTitle">Toplu Hesaplama</div>
+
+    <div class="content-area">
+        
+        <div id="tab1" class="tab-content active">
+            <div class="card" style="background: #1a73e8; padding: 5px;">
+                <div class="summary-box bg-orange">
+                    <span class="summary-label">TOPLAM HAT ADEDİ</span>
+                    <span class="summary-val" id="tHat">0</span>
+                </div>
+                <div class="summary-box bg-gray">
+                    <span class="summary-label">İNDİRİM ORANI (%)</span>
+                    <input type="number" class="t1-input" id="indirim" value="77" oninput="t1_hesapla()" style="width:70px; padding:8px;">
+                </div>
+                <div class="summary-box bg-purple">
+                    <span class="summary-label">AYLIK İNDİRİMSİZ FİYAT</span>
+                    <span class="summary-val" id="tAy">0,00 TL</span>
+                </div>
+                <div class="summary-box bg-green">
+                    <span class="summary-label">AYLIK İNDİRİMLİ FİYAT</span>
+                    <span class="summary-val" id="tInd">0,00 TL</span>
+                </div>
+                <div class="summary-box bg-red">
+                    <span class="summary-label" style="color:rgba(255,255,255,0.8)">YILLIK NET TOPLAM İNDİRİM</span>
+                    <span class="summary-val" id="tYil">0,00 TL</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Tarife Listesi</h3>
+                <table class="t1-table">
+                    <tbody id="t1-liste"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab2" class="tab-content">
+            <div class="card">
+                <h3 class="card-title">Tarife Seçimi</h3>
+                <label>Tarife Paketi Seçin:</label>
+                <select id="tarife" onchange="t2_calculate()"></select>
+                
+                <div class="slider-container">
+                    <label>Uygulanacak Oran (%)</label>
+                    <div class="pct-val" id="pctValue">85</div>
+                    <input type="range" id="pctSlider" min="65" max="85" value="85" step="1" oninput="t2_updatePctLabel(); t2_calculate();">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-gray);">
+                        <span>65%</span><span>75%</span><span>85%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box">
+                <div id="basePriceLabel" style="font-size: 13px; color: var(--text-gray);">Paket Seçiniz</div>
+                <div style="font-size: 14px; font-weight: bold; margin-top: 15px;">Hesaplanan Tutar</div>
+                <div class="result-val" id="finalPrice">0.00 TL</div>
+            </div>
+        </div>
+
+        <div id="tab3" class="tab-content">
+            <button class="accordion-btn" onclick="toggleAcc('yeni')">
+                <span>🌟 Yeni Müşteriler İçin</span> <span>▼</span>
+            </button>
+            <div id="yeni" class="acc-content">
+                <div id="yeniListContainer"></div>
+            </div>
+
+            <button class="accordion-btn" onclick="toggleAcc('mevcut')">
+                <span>👥 Mevcut Müşteriler İçin</span> <span>▼</span>
+            </button>
+            <div id="mevcut" class="acc-content">
+                <div id="mevcutListContainer"></div>
+            </div>
+        </div>
+
+        <div id="tab4" class="tab-content">
+            <div class="card">
+                <h3 class="card-title">Oran Hesaplayıcı</h3>
+                <label>Tarife Fiyatı (TL)</label>
+                <input type="number" id="t4-tarife" placeholder="Örn: 1000" min="0">
+
+                <label style="margin-top: 15px;">İndirim Tutarı (TL)</label>
+                <input type="number" id="t4-indirim" placeholder="Örn: 200" min="0">
+            </div>
+
+            <div class="t4-result" id="t4-sonuc">% 0.00</div>
+        </div>
+
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('tab1', this, 'Toplu Hesaplama')">
+            <i>📊</i><span>Toplu</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('tab2', this, 'Tekli Hesaplama')">
+            <i>📱</i><span>Tekli</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('tab3', this, 'Tarife Fiyatları')">
+            <i>📋</i><span>Listeler</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('tab4', this, 'İndirim Oranı')">
+            <i>📉</i><span>İndirim</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- APP NAVİGASYON MANTIĞI ---
+    function switchTab(tabId, navElement, title) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        navElement.classList.add('active');
+        document.getElementById('appHeaderTitle').innerText = title;
+        window.scrollTo(0, 0); // Sayfa başına dön
+    }
+
+    function toggleAcc(id) {
+        const content = document.getElementById(id);
+        content.style.display = content.style.display === "block" ? "none" : "block";
+    }
+
+    // --- TAB 1: TOPLU HESAPLAMA ---
+    const t1_veriler = [
+        ["İŞTE TARİFE", 60], ["İŞTE SÜPER 2", 1330], ["İŞTE SÜPER 4", 1650], ["İŞTE SÜPER 6", 2100],
+        ["İŞTE SÜPER PLATİN 8", 2700], ["İŞTE SÜPER PLATİN 10", 3100], ["İŞTE SÜPER PLATİN 15", 3900],
+        ["İŞTE SÜPER PLATİN 20", 4300], ["İŞTE SÜPER PLATİN BLACK 30", 5050], ["İŞTE SÜPER PLATİN BLACK 50", 7200],
+        ["İŞTE SÜPER PLATİN BLACK 100", 8400], ["İŞTE SÜPER PLATİN BLACK 150", 8000], ["LİFECELL 5GB", 745],
+        ["LİFECELL 10GB", 1000], ["LİFECELL 15GB", 1135], ["LİFECELL 25GB", 1400], ["LİFECELL 50GB", 2000],
+        ["LİFECELL 100GB", 2930], ["STANDART ARAÇ", 99], ["BOŞ", 1]
+    ];
+
+    const t1_liste = document.getElementById('t1-liste');
+    t1_veriler.forEach(v => {
+        t1_liste.innerHTML += `<tr>
+            <td>
+                <div class="t1-tarife-ad">${v[0]}</div>
+                <div class="t1-fiyat-etiket">${v[1]} TL</div>
+            </td>
+            <td style="text-align:right">
+                <input type="number" class="t1-input t1-adet" data-fiyat="${v[1]}" placeholder="0" min="0" oninput="t1_hesapla()" inputmode="numeric">
+            </td>
+        </tr>`;
+    });
+
+    function t1_hesapla() {
+        let hat = 0, toplam = 0;
+        const indirim = parseFloat(document.getElementById('indirim').value) || 0;
+        document.querySelectorAll('.t1-adet').forEach(i => {
+            const a = parseInt(i.value) || 0;
+            hat += a;
+            toplam += a * parseFloat(i.dataset.fiyat);
+        });
+        const indirimli = toplam * (1 - (indirim / 100));
+        document.getElementById('tHat').innerText = hat;
+        document.getElementById('tAy').innerText = toplam.toLocaleString('tr-TR', {minimumFractionDigits: 2}) + " ₺";
+        document.getElementById('tInd').innerText = indirimli.toLocaleString('tr-TR', {minimumFractionDigits: 2}) + " ₺";
+        document.getElementById('tYil').innerText = (indirimli * 12).toLocaleString('tr-TR', {minimumFractionDigits: 2}) + " ₺";
+    }
+
+    // --- TAB 2: TEKLİ HESAPLAMA ---
+    const t2_data = [
+        {"TARİFE PAKETLER":"İŞTE SÜPER 2","FİYAT":"1330","85":199.5,"84":212.8,"83":226.1,"82":239.4,"81":252.7,"80":266.0,"79":279.3,"78":292.6,"77":305.9,"76":319.2,"75":332.5,"74":345.8,"73":359.1,"72":372.4,"71":385.7,"70":399.0,"69":412.3,"68":425.6,"67":438.9,"66":452.2,"65":465.5},
+        {"TARİFE PAKETLER":"İŞTE SÜPER 4","FİYAT":"1650","85":247.5,"84":264.0,"83":280.5,"82":297.0,"81":313.5,"80":330.0,"79":346.5,"78":363.0,"77":379.5,"76":396.0,"75":412.5,"74":429.0,"73":445.5,"72":462.0,"71":478.5,"70":495.0,"69":511.5,"68":528.0,"67":544.5,"66":561.0,"65":577.5},
+        {"TARİFE PAKETLER":"İŞTE SÜPER 6","FİYAT":"2100","85":315.0,"84":336.0,"83":357.0,"82":378.0,"81":399.0,"80":420.0,"79":441.0,"78":462.0,"77":483.0,"76":504.0,"75":525.0,"74":546.0,"73":567.0,"72":588.0,"71":609.0,"70":630.0,"69":651.0,"68":672.0,"67":693.0,"66":714.0,"65":735.0},
+        {"TARİFE PAKETLER":"İŞTE SÜPER PLATİN 8","FİYAT":"2700","85":405.0,"84":432.0,"83":459.0,"82":486.0,"81":513.0,"80":540.0,"79":567.0,"78":594.0,"77":621.0,"76":648.0,"75":675.0,"74":702.0,"73":729.0,"72":756.0,"71":783.0,"70":810.0,"69":837.0,"68":864.0,"67":891.0,"66":918.0,"65":945.0},
+        {"TARİFE PAKETLER":"İŞTE SÜPER PLATİN 10","FİYAT":"3100","85":465.0,"84":496.0,"83":527.0,"82":558.0,"81":589.0,"80":620.0,"79":651.0,"78":682.0,"77":713.0,"76":744.0,"75":775.0,"74":806.0,"73":837.0,"72":868.0,"71":899.0,"70":930.0,"69":961.0,"68":992.0,"67":1023.0,"66":1054.0,"65":1085.0},
+        {"TARİFE PAKETLER":"İŞTE SÜPER PLATİN 15","FİYAT":"3900","85":585.0,"84":624.0,"83":663.0,"82":702.0,"81":741.0,"80":780.0,"79":819.0,"78":858.0,"77":897.0,"76":936.0,"75":975.0,"74":1014.0,"73":1053.0,"72":1092.0,"71":1131.0,"70":1170.0,"69":1209.0,"68":1248.0,"67":1287.0,"66":1326.0,"65":1365.0},
+        {"TARİFE PAKETLER":"İŞTE SÜPER PLATİN 20","FİYAT":"4300","85":645.0,"84":688.0,"83":731.0,"82":774.0,"81":817.0,"80":860.0,"79":903.0,"78":946.0,"77":989.0,"76":1032.0,"75":1075.0,"74":1118.0,"73":1161.0,"72":1204.0,"71":1247.0,"70":1290.0,"69":1333.0,"68":1376.0,"67":1419.0,"66":1462.0,"65":1505.0},
+        {"TARİFE PAKETLER":"İŞTE SÜPER PLATİN BLACK 30","FİYAT":"5050","85":757.5,"84":808.0,"83":858.5,"82":909.0,"81":959.5,"80":1010.0,"79":1060.5,"78":1111.0,"77":1161.5,"76":1212.0,"75":1262.5,"74":1313.0,"73":1363.5,"72":1414.0,"71":1464.5,"70":1515.0,"69":1565.5,"68":1616.0,"67":1666.5,"66":1717.0,"65":1767.5},
+        {"TARİFE PAKETLER":"İŞTE SÜPER PLATİN BLACK 50","FİYAT":"7200","85":1080.0,"84":1152.0,"83":1224.0,"82":1296.0,"81":1368.0,"80":1440.0,"79":1512.0,"78":1584.0,"77":1656.0,"76":1728.0,"75":1800.0,"74":1872.0,"73":1944.0,"72":2016.0,"71":2088.0,"70":2160.0,"69":2232.0,"68":2304.0,"67":2376.0,"66":2448.0,"65":2520.0},
+        {"TARİFE PAKETLER":"İŞTE SÜPER PLATİN BLACK 100","FİYAT":"8400","85":1260.0,"84":1344.0,"83":1428.0,"82":1512.0,"81":1596.0,"80":1680.0,"79":1764.0,"78":1848.0,"77":1932.0,"76":2016.0,"75":2100.0,"74":2184.0,"73":2268.0,"72":2352.0,"71":2436.0,"70":2520.0,"69":2604.0,"68":2688.0,"67":2772.0,"66":2856.0,"65":2940.0},
+        {"TARİFE PAKETLER":"İŞTE SÜPER PLATİN BLACK 150","FİYAT":"9300","85":1395.0,"84":1488.0,"83":1581.0,"82":1674.0,"81":1767.0,"80":1860.0,"79":1953.0,"78":2046.0,"77":2139.0,"76":2232.0,"75":2325.0,"74":2418.0,"73":2511.0,"72":2604.0,"71":2697.0,"70":2790.0,"69":2883.0,"68":2976.0,"67":3069.0,"66":3162.0,"65":3255.0},
+        {"TARİFE PAKETLER":"LİFECELL 5GB","FİYAT":"745","85":111.75,"84":119.2,"83":126.65,"82":134.1,"81":141.55,"80":149.0,"79":156.45,"78":163.9,"77":171.35,"76":178.8,"75":186.25,"74":193.7,"73":201.15,"72":208.6,"71":216.05,"70":223.5,"69":230.95,"68":238.4,"67":245.85,"66":253.3,"65":260.75},
+        {"TARİFE PAKETLER":"LİFECELL 10GB","FİYAT":"1000","85":150.0,"84":160.0,"83":170.0,"82":180.0,"81":190.0,"80":200.0,"79":210.0,"78":220.0,"77":230.0,"76":240.0,"75":250.0,"74":260.0,"73":270.0,"72":280.0,"71":290.0,"70":300.0,"69":310.0,"68":320.0,"67":330.0,"66":340.0,"65":350.0},
+        {"TARİFE PAKETLER":"LİFECELL 15GB","FİYAT":"1135","85":170.25,"84":181.6,"83":192.95,"82":204.3,"81":215.65,"80":227.0,"79":238.35,"78":249.7,"77":261.05,"76":272.4,"75":283.75,"74":295.1,"73":306.45,"72":317.8,"71":329.15,"70":340.5,"69":351.85,"68":363.2,"67":374.55,"66":385.9,"65":397.25},
+        {"TARİFE PAKETLER":"LİFECELL 25GB","FİYAT":"1400","85":210.0,"84":224.0,"83":238.0,"82":252.0,"81":266.0,"80":280.0,"79":294.0,"78":308.0,"77":322.0,"76":336.0,"75":350.0,"74":364.0,"73":378.0,"72":392.0,"71":406.0,"70":420.0,"69":434.0,"68":448.0,"67":462.0,"66":476.0,"65":490.0},
+        {"TARİFE PAKETLER":"LİFECELL 50GB","FİYAT":"2000","85":300.0,"84":320.0,"83":340.0,"82":360.0,"81":380.0,"80":400.0,"79":420.0,"78":440.0,"77":460.0,"76":480.0,"75":500.0,"74":520.0,"73":540.0,"72":560.0,"71":580.0,"70":600.0,"69":620.0,"68":640.0,"67":660.0,"66":680.0,"65":700.0},
+        {"TARİFE PAKETLER":"LİFECELL 100GB","FİYAT":"2930","85":439.5,"84":468.8,"83":498.1,"82":527.4,"81":556.7,"80":586.0,"79":615.3,"78":644.6,"77":673.9,"76":703.2,"75":732.5,"74":761.8,"73":791.1,"72":820.4,"71":849.7,"70":879.0,"69":908.3,"68":937.6,"67":966.9,"66":996.2,"65":1025.5},
+        {"TARİFE PAKETLER":"İŞTE TARİFE","FİYAT":"60","85":51.0,"84":50.4,"83":49.8,"82":49.2,"81":48.6,"80":48.0,"79":47.4,"78":46.8,"77":46.2,"76":45.6,"75":45.0,"74":44.4,"73":43.8,"72":43.2,"71":42.6,"70":42.0,"69":41.4,"68":40.8,"67":40.2,"66":39.6,"65":39.0},
+        {"TARİFE PAKETLER":"STANDART ARAÇ","FİYAT":"99","85":84.15,"84":83.16,"83":82.17,"82":81.18,"81":80.19,"80":79.2,"79":78.21,"78":77.22,"77":76.23,"76":75.24,"75":74.25,"74":73.26,"73":72.27,"72":71.28,"71":70.29,"70":69.3,"69":68.31,"68":67.32,"67":66.33,"66":65.34,"65":64.35}
+    ];
+
+    const t2_tarifeSelect = document.getElementById('tarife');
+    t2_tarifeSelect.innerHTML = '<option value="">Paket Seçiniz...</option>';
+    t2_data.forEach((item, i) => { t2_tarifeSelect.innerHTML += `<option value="${i}">${item['TARİFE PAKETLER']}</option>`; });
+
+    function t2_updatePctLabel() { document.getElementById('pctValue').innerText = document.getElementById('pctSlider').value + "%"; }
+
+    function t2_calculate() {
+        const i = t2_tarifeSelect.value;
+        if(i === "") {
+            document.getElementById('basePriceLabel').innerText = "Paket Seçiniz";
+            document.getElementById('finalPrice').innerText = "0.00 TL";
+            return;
+        }
+        const pct = document.getElementById('pctSlider').value;
+        const base = t2_data[i]['FİYAT'];
+        const price = t2_data[i][pct];
+        document.getElementById('basePriceLabel').innerText = `Liste Fiyatı: ${base} TL`;
+        document.getElementById('finalPrice').innerText = Number(price).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₺";
+    }
+
+    // --- TAB 3: UZUN LİSTELERİ DOLDURMA ---
+    // Kod kalabalığı yapmamak için listeleri JS objelerinden çekip render ediyoruz.
+    const listeYeni = [
+        { k: "İşte Hesaplı (Yeni Paketler)", p: [ {n:"İşte Hesaplı 1 Yeni", d:"1000 DK + 100 SMS + 1 GB", f:"440 TL"}, {n:"İşte Hesaplı 5 Yeni", d:"1500 DK + 100 SMS + 5 GB", f:"520 TL"}, {n:"İşte Hesaplı 10 Yeni", d:"2000 DK + 100 SMS + 10 GB", f:"650 TL"}, {n:"İşte Hesaplı 20 Yeni", d:"2000 DK + 100 SMS + 20 GB", f:"845 TL"}, {n:"İşte Hesaplı 40 Yeni", d:"Sınırsız DK + 20 GB + Sosyal 20 GB", f:"1105 TL"}, {n:"İşte Hesaplı Platin 60 Yeni", d:"5000 DK + 30 GB + Sosyal 30 GB", f:"1200 TL"}, {n:"Platin Black 80 Yeni", d:"5000 DK + 40 GB + Sosyal 40 GB", f:"1300 TL"}, {n:"Platin Black 100 Yeni", d:"5000 DK + 50 GB + Sosyal 50 GB", f:"1400 TL"}, {n:"Platin Black 200 Yeni", d:"5000 DK + 100 GB + Sosyal 100 GB", f:"2200 TL"} ] },
+        { k: "İşte Hesaplı Star", p: [ {n:"10 Star", d:"2000 DK + 10 GB", f:"400 TL"}, {n:"20 Star", d:"2000 DK + 20 GB", f:"500 TL"}, {n:"40 Star", d:"3000 DK + 40 GB", f:"700 TL"}, {n:"60 Star", d:"5000 DK + 60 GB", f:"800 TL"} ] },
+        { k: "İşte Hesaplı Avantaj", p: [ {n:"10 Avantaj", d:"2000 DK + 10 GB", f:"250 TL"}, {n:"20 Avantaj", d:"2000 DK + 20 GB", f:"320 TL"}, {n:"40 Avantaj", d:"3000 DK + 40 GB", f:"400 TL"}, {n:"60 Avantaj", d:"5000 DK + 60 GB", f:"500 TL"}, {n:"Black 100 Avantaj", d:"5000 DK + 50 GB + Sosyal 50 GB", f:"600 TL"} ] }
+    ];
+
+    const listeMevcut = [
+        { k: "İşte Hesaplı Standart", p: [ {n:"İşte Hesaplı 1", f:"380 TL"}, {n:"İşte Hesaplı 2", f:"410 TL"}, {n:"İşte Hesaplı 4", f:"465 TL"}, {n:"İşte Hesaplı 6", f:"485 TL"}, {n:"İşte Hesaplı 8", f:"550 TL"}, {n:"İşte Hesaplı 10", f:"615 TL"}, {n:"İşte Hesaplı 15", f:"775 TL"}, {n:"İşte Hesaplı 20", f:"930 TL"}, {n:"Platin 25", f:"1080 TL"}, {n:"Platin 30", f:"1190 TL"}, {n:"Platin 50", f:"1350 TL"}, {n:"Black 80", f:"1745 TL"}, {n:"Black 100", f:"1900 TL"}, {n:"Black 200", f:"2670 TL"} ] },
+        { k: "İşte Hesaplı Ultra", p: [ {n:"1 Ultra", f:"375 TL"}, {n:"2 Ultra", f:"380 TL"}, {n:"4 Ultra", f:"405 TL"}, {n:"6 Ultra", f:"435 TL"}, {n:"8 Ultra", f:"485 TL"}, {n:"10 Ultra", f:"515 TL"}, {n:"15 Ultra", f:"640 TL"}, {n:"20 Ultra", f:"730 TL"}, {n:"Platin 25 Ultra", f:"885 TL"}, {n:"Platin 30 Ultra", f:"1070 TL"}, {n:"Platin 50 Ultra", f:"1135 TL"}, {n:"Black 80 Ultra", f:"1535 TL"}, {n:"Black 100 Ultra", f:"1720 TL"} ] },
+        { k: "İşte Hesaplı Fırsat", p: [ {n:"1 Fırsat", f:"365 TL"}, {n:"2 Fırsat", f:"375 TL"}, {n:"4 Fırsat", f:"390 TL"}, {n:"6 Fırsat", f:"425 TL"}, {n:"8 Fırsat", f:"465 TL"}, {n:"10 Fırsat", f:"495 TL"}, {n:"15 Fırsat", f:"565 TL"}, {n:"20 Fırsat", f:"630 TL"}, {n:"Platin 25 Fırsat", f:"810 TL"}, {n:"Platin 30 Fırsat", f:"895 TL"}, {n:"Platin 50 Fırsat", f:"995 TL"}, {n:"Black 80 Fırsat", f:"1150 TL"}, {n:"Black 100 Fırsat", f:"1255 TL"} ] }
+    ];
+
+    function renderList(data, containerId) {
+        let html = '';
+        data.forEach(cat => {
+            html += `<div class="cat-title">${cat.k}</div>`;
+            cat.p.forEach(pkg => {
+                let det = pkg.d ? `<span class="pkg-det">${pkg.d}</span>` : '';
+                html += `<div class="list-item">
+                            <div><span class="pkg-name">${pkg.n}</span>${det}</div>
+                            <span class="pkg-price">${pkg.f}</span>
+                         </div>`;
+            });
+        });
+        document.getElementById(containerId).innerHTML = html;
+    }
+    renderList(listeYeni, 'yeniListContainer');
+    renderList(listeMevcut, 'mevcutListContainer');
+
+    // --- TAB 4: İNDİRİM ORANI ---
+    const t4_tarifeInput = document.getElementById('t4-tarife');
+    const t4_indirimInput = document.getElementById('t4-indirim');
+    const t4_sonucDiv = document.getElementById('t4-sonuc');
+
+    function t4_hesapla() {
+        const tarife = parseFloat(t4_tarifeInput.value);
+        const indirim = parseFloat(t4_indirimInput.value);
+        if (tarife > 0 && indirim >= 0) {
+            let oran = (indirim / tarife) * 100;
+            t4_sonucDiv.innerText = "% " + (oran > 100 ? 100 : oran).toFixed(2);
+        } else {
+            t4_sonucDiv.innerText = "% 0.00";
+        }
+    }
+    t4_tarifeInput.addEventListener('input', t4_hesapla);
+    t4_indirimInput.addEventListener('input', t4_hesapla);
+</script>
+
+</body>
+</html>
